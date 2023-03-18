@@ -1,0 +1,37 @@
+
+<html>
+<?php include_once "db_conn.php"; ?>
+<head>
+    <meta charset="UTF-8">
+    <title>Flower Arrangements</title>
+    <link rel="stylesheet" href="css/bootstrap.css">
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <h3>Flower Arrangements</h3>
+                <?php
+                $arrangement_list = query($conn, "SELECT arrangement_id, arrangement_name, arrangement_price FROM arrangements WHERE arrangement_status='A'");
+
+                echo "<table class='table table-bordered'>";
+                echo "<thead>";
+                echo "<th>Arrangement Name</th>";
+                echo "<th>Price</th>";
+                echo "<th>Action</th>";
+                echo "</thead>";
+                foreach($arrangement_list as $key => $row){
+                    echo "<tr>";
+                    echo "<td>" . $row['arrangement_name'] . "</td>";
+                    echo "<td>" . $row['arrangement_price'] . "</td>";
+                    echo "<td> <a class='btn btn-success' href='place_order.php?arrangement_id=". $row['arrangement_id'] ."'> Order </a> </td>";
+                    echo "</tr>";
+                }
+                echo "</table>";
+            ?>
+        </div>
+    </div>
+</div>
+</body>
+<script src="js/bootstrap.js"></script>
+</html>

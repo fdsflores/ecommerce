@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>List of Products</title>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container">
+<div class="row">
+<div class="col-xs-12">
+<h3>List of Products</h3>
+<table class="table">
+<thead>
+<tr>
+<th>Product Name</th>
+<th>Price</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<?php
+$db = mysqli_connect('localhost', 'username', 'password', 'database_name');
+$sql = "SELECT * FROM products";
+$result = mysqli_query($db, $sql);
+while ($row = mysqli_fetch_assoc($result)) {
+echo "<tr>";
+echo "<td>" . $row['product_name'] . "</td>";
+echo "<td>$" . $row['price'] . "</td>";
+echo "<td><a href='edit_product.php?id=" . $row['id'] . "' class='btn btn-primary'>Edit</a> <a href='delete_product.php?id=" . $row['id'] . "' class='btn btn-danger'>Delete</a></td>";
+echo "</tr>";
+}
+mysqli_close($db);
+?>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+</body>
+</html>

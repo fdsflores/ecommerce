@@ -1,0 +1,482 @@
+Create an SQL based on the needed situations below. Base your table columns from the figure below.
+
+Refer to this tables:
+
+1.) Display all items having active status.
+Select * From products Where item_status = 'A';
+2.) Display all users that are inactive.
+Select * From products Where user_status = 'I';
+3.) Display the list of order's Descriptive information:
+
+order_id, date_ordered, username, item_name, total_amount
+
+Note: total_amount = SUM(item_qty * item_price)
+
+Select o.order_id, o.date_ordered, u.username, i.item_name, SUM(o.item_qty * i.item_price) as total_amount
+FROM orders  o
+JOIN users u on o.user_id = u.user_id
+JOIN products p on o.item_id = p.item_id
+GROUP BY o.order_id
+
+4.) Display all the order information having "Delivered" status
+order_status, order_id, user_name, item_name, total_amount, total_qty
+
+Note: total_qty = SUM(item_qty)
+SELECT order_status, order_id, username, item_name, SUM(o.item_qty * p.item_price) as total_amount, SUM(item_qty) as total_qty
+FROM orders o, users u, products p
+WHERE order_status = 'D' 
+AND o.user_id = u.user_id 
+AND o.item_id = p.item_id
+GROUP BY order_status, order_id, username, item_name;
+
+5.) Display active items ordered by all active users and has been ordered for the year 2023 or after Dec. 31, 2022 and is still pending
+
+SELECT p.item_name, COUNT(DISTINCT u.user_id) AS num_users, SUM(o.item_qty) AS total_qty
+FROM orders o
+JOIN users u ON o.user_id = u.user_id
+JOIN products p ON o.item_id = p.item_id
+WHERE u.user_status = 'A' AND o.date_ordered >= '2023-01-01' AND o.order_status = 'P'
+GROUP BY o.item_name
+HAVING COUNT(DISTINCT o.user_id) = (SELECT COUNT(*) FROM users WHERE user_status = 'A');
+
+6.) Write the html/php script that will display the list of Products. a sample output is provided for the users display, you need to display products. put an action button similar to the below image.
+Captionless Image
+
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>List of Products</title>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container">
+<div class="row">
+<div class="col-xs-12">
+<h3>List of Products</h3>
+<table class="table">
+<thead>
+<tr>
+<th>Product Name</th>
+<th>Price</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<?php
+$db = mysqli_connect('localhost', 'username', 'password', 'database_name');
+$sql = "SELECT * FROM products";
+$result = mysqli_query($db, $sql);
+while ($row = mysqli_fetch_assoc($result)) {
+echo "<tr>";
+echo "<td>" . $row['product_name'] . "</td>";
+echo "<td>$" . $row['price'] . "</td>";
+echo "<td><a href='edit_product.php?id=" . $row['id'] . "' class='btn btn-primary'>Edit</a> <a href='delete_product.php?id=" . $row['id'] . "' class='btn btn-danger'>Delete</a></td>";
+echo "</tr>";
+}
+mysqli_close($db);
+?>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+</body>
+</html>
+
+7.) BONUS: Write any other Situational Cases that you will encounter with your own Web Systems - related to your Systems Database. Provide similar solution using Display
+Situational Case: When a customer wants to place an order for a flower arrangement. In this case, the system would need to display available flower arrangements to the customer and allow them to select their desired arrangement and submit their order.
+
+<html>
+<?php include_once "db_conn.php"; ?>
+<head>
+    <meta charset="UTF-8">
+    <title>Flower Arrangements</title>
+    <link rel="stylesheet" href="css/bootstrap.css">
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <h3>Flower Arrangements</h3>
+                <?php
+                $arrangement_list = query($conn, "SELECT arrangement_id, arrangement_name, arrangement_price FROM arrangements WHERE arrangement_status='A'");
+
+                echo "<table class='table table-bordered'>";
+                echo "<thead>";
+                echo "<th>Arrangement Name</th>";
+                echo "<th>Price</th>";
+                echo "<th>Action</th>";
+                echo "</thead>";
+                foreach($arrangement_list as $key => $row){
+                    echo "<tr>";
+                    echo "<td>" . $row['arrangement_name'] . "</td>";
+                    echo "<td>" . $row['arrangement_price'] . "</td>";
+                    echo "<td> <a class='btn btn-success' href='place_order.php?arrangement_id=". $row['arrangement_id'] ."'> Order </a> </td>";
+                    echo "</tr>";
+                }
+                echo "</table>";
+            ?>
+        </div>
+    </div>
+</div>
+</body>
+<script src="js/bootstrap.js"></script>
+</html>
+
+8.) Write the 2 html/php script that will insert the record for the products table.
+Write the HTML/PHP form interface that will accept the Product information needed, Item Name and Item Price
+No need to write the whole html-body, just need the FORM where it accepts the input.
+
+<!--product.php -->
+<form action="" method="">
+...
+</form>
+
+Sample output is provided in the screenshot. Please create one for Products
+Captionless Image
+<!-- product.php -->
+
+<form action="process.php" method="POST">
+    <label for="item_name">Item Name:</label>
+    <input type="text" name="item_name" id="item_name">
+
+    <label for="item_price">Item Price:</label>
+    <input type="number" name="item_price" id="item_price">
+
+    <input type="submit" value="Submit">
+</form>
+
+9.) Write the php script that will capture the data that will be submitted be the form you created. the script should be able to perform the Insert into the products table based from the product info needed.
+<?php
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $item_name = $_POST['item_name'];
+    $item_price = $_POST['item_price'];
+    if (empty($item_name) || empty($item_price)) {
+        echo "Please fill in all required fields.";
+    } else {
+        $db_host = "localhost";
+        $db_user = "username";
+        $db_pass = "password";
+        $db_name = "database_name";
+        $conn = mysqli_connect($db_host, $db_user, $db_pass, $db_name);
+        if (!$conn) {
+            die("Connection failed: " . mysqli_connect_error());
+        }
+        $sql = "INSERT INTO products (item_name, item_price) VALUES (?, ?)";
+        $stmt = mysqli_prepare($conn, $sql);
+        mysqli_stmt_bind_param($stmt, "si", $item_name, $item_price);
+        mysqli_stmt_execute($stmt);
+        if (mysqli_stmt_error($stmt)) {
+            echo "Error: " . mysqli_stmt_error($stmt);
+        } else {
+            echo "Product added successfully!";
+        }
+        mysqli_stmt_close($stmt);
+        mysqli_close($conn);
+    }
+}
+?>
+10.) BONUS: Write any other Situational Cases that you will encounter with your own Web Systems - related to your Systems Database. Provide similar solution using Insert
+INSERT INTO flowers (name, description, price, image_url)
+VALUES ('New Flower', 'This is a description of the new flower', 599, 'https://example.com/new-flower.jpg');
+
+11.) Write the HTML/PHP scripts that will update the records displayed in part 1
+Write the html/php script where the link/button "Update" similar from the display in part 1 will lead to, in this case for the list of items. name that script as update_item.php. it should have a form with the default product details that needs to be updated.
+
+<form action="" method="">
+...
+</form>
+
+Sample Output provided below, but this one is for the user.
+Captionless Image
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>Update Product</title>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container">
+<div class="row">
+<div class="col-xs-12">
+<h3>Update Product</h3>
+<?php
+$db = mysqli_connect('localhost', 'username', 'password', 'database_name');
+if(isset($_GET['id'])) {
+$id = $_GET['id'];
+$sql = "SELECT * FROM products WHERE id = '$id'";
+$result = mysqli_query($db, $sql);
+$row = mysqli_fetch_assoc($result);
+}
+if(isset($_POST['update'])) {
+$product_name = $_POST['product_name'];
+$price = $_POST['price'];
+$sql = "UPDATE products SET product_name = '$product_name', price = '$price' WHERE id = '$id'";
+mysqli_query($db, $sql);
+header("Location: list_of_products.php");
+}
+?>
+<form method="post" action="">
+<div class="form-group">
+<label for="product_name">Product Name</label>
+<input type="text" class="form-control" id="product_name" name="product_name" value="<?php echo $row['product_name']; ?>">
+</div>
+<div class="form-group">
+<label for="price">Price</label>
+<input type="text" class="form-control" id="price" name="price" value="<?php echo $row['price']; ?>">
+</div>
+<button type="submit" name="update" class="btn btn-primary">Update</button>
+</form>
+</div>
+</div>
+</div>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3
+Write the php script that will accept the submitted data and update the items table using above form details.
+<?php
+// update_item.php
+include_once "db_conn.php";
+if(isset($_POST['item_id'])){
+    $table = "items";
+    $item_id = $_POST['item_id'];
+    $item_name = $_POST['item_name'];
+    $item_price = $_POST['item_price'];
+
+    $fields = array( 'item_name' => $item_name
+                    , 'item_price' => $item_price
+                   );
+    $filter = array( 'item_id' => $item_id );
+    
+    if( update($conn, $table, $fields, $filter )){
+        header("location: item_display.php?update_status=success");
+        exit();
+    }
+    else{
+        header("location: item_display.php?update_status=failed");
+        exit();
+    }
+}
+else{
+    $item_id = $_GET['item_id'];
+    $item = query($conn, "SELECT item_name, item_price FROM items WHERE item_id=$item_id AND item_status='A'");
+
+    if(count($item) == 0){
+        header("location: item_display.php");
+        exit();
+    }
+    $item_name = $item[0]['item_name'];
+    $item_price = $item[0]['item_price'];
+}
+function query($conn, $sql){
+    $result = mysqli_query($conn, $sql);
+    $rows = array();
+    while($row = mysqli_fetch_assoc($result)){
+        $rows[] = $row;
+    }
+    return $rows;
+}
+function update($conn, $table, $fields, $filter){
+    $set_clause = array();
+    foreach($fields as $key => $value){
+        $set_clause[] = "$key='$value'";
+    }
+    $where_clause = array();
+    foreach($filter as $key => $value){
+        $where_clause[] = "$key='$value'";
+    }
+    $sql = "UPDATE $table SET " . implode(",", $set_clause) . " WHERE " . implode(" AND ", $where_clause);
+    $result = mysqli_query($conn, $sql);
+    return $result;
+}
+?>
+12.) BONUS: Write any other Situational Cases that you will encounter with your own Web Systems - related to your Systems Database. Provide similar solution using Update
+Situational Case: A customer has placed an order for a bouquet of flowers and wants to change the delivery date to a later date.
+
+<?php
+include_once "conn_db.php";
+
+if(isset($_POST['order_id'])){
+    $table = "flower_orders";
+    
+    $p_order_id = $_POST['order_id'];
+    $p_delivery_date = $_POST['delivery_date'];
+
+    // Retrieve order details
+    $order_details = query($conn, "SELECT * FROM flower_orders WHERE order_id = '$p_order_id'");
+
+    if($order_details){
+        // Update delivery date in database
+        $fields = array('delivery_date' => $p_delivery_date);
+        $filter = array('order_id' => $p_order_id);
+
+        if(update($conn, $table, $fields, $filter)){
+            // Notify customer of successful update
+            echo "<div class='alert alert-success'>Order delivery date updated successfully.</div>";
+        }
+        else{
+            // Notify customer of failed update
+            echo "<div class='alert alert-danger'>Failed to update delivery date.</div>";
+        }
+    }
+    else{
+        // Notify customer that order does not exist
+        echo "<div class='alert alert-danger'>Order does not exist.</div>";
+    }
+}
+?>
+
+13.) Write the php script that will process the delete "button" show at least 2 different types of deletion algorithm.
+Write the php script called delete_item.php where the button in the display will lead to. it should permanently delete the record from the database.
+
+<?php
+$host = 'localhost';
+$dbname = 'my_database';
+$user = 'my_username';
+$password = 'my_password';
+try {
+    $db = new PDO("mysql:host=$host;dbname=$dbname", $user, $password);
+} catch(PDOException $e) {
+    echo "Connection failed: " . $e->getMessage();
+    exit;
+}
+if(isset($_POST['delete_button'])) {
+    $item_id = $_POST['item_id'];
+    $stmt = $db->prepare("DELETE FROM items WHERE id = ?");
+    $stmt->execute([$item_id]);
+    header("Location: display_items.php");
+    exit;
+}
+?>
+
+
+14.) BONUS: Write any other Situational Cases that you will encounter with your own Web Systems - related to your Systems Database. Provide similar solution using Delete
+Situational Case: Suppose a customer made an order, but later decided to cancel it. In this case, we need to delete the order from the database.
+
+<?php
+include_once "conn_db.php";
+if(isset($_GET['order_id'])){
+   if(query($conn, "DELETE FROM orders WHERE order_id = ?", $params) ){
+       header("location: order_history.php?order_delete=done");
+       exit();
+   }
+   else{
+       header("location: order_history.php?order_delete=failed");
+       exit();
+   } 
+}
+
+
+15.)
+User Interface (order.php)
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Order Now</title>
+</head>
+<body>
+    <h1>Available Items:</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Item ID</th>
+                <th>Item Name</th>
+                <th>Item Price</th>
+                <th>Quantity</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php
+            //connect to database
+            $db = mysqli_connect('localhost', 'username', 'password', 'database_name');
+            //retrieve items from products table
+            $query = "SELECT * FROM products";
+            $result = mysqli_query($db, $query);
+            //display items in a table
+            while ($row = mysqli_fetch_array($result)) {
+                echo "<tr>";
+                echo "<td>".$row['id']."</td>";
+                echo "<td>".$row['name']."</td>";
+                echo "<td>".$row['price']."</td>";
+                echo "<td><input type='number' name='quantity' value='1' min='1'></td>";
+                echo "<td><a href='checkout.php?id=".$row['id']."&name=".$row['name']."&price=".$row['price']."'>Buy Now</a></td>";
+                echo "</tr>";
+            }
+            mysqli_close($db);
+            ?>
+        </tbody>
+    </table>
+</body>
+</html>
+
+Process PHP (checkout.php)
+
+<?php
+//connect to database
+$db = mysqli_connect('localhost', 'username', 'password', 'database_name');
+
+//retrieve item details from URL parameters
+$item_id = $_GET['id'];
+$item_name = $_GET['name'];
+$item_price = $_GET['price'];
+$item_qty = $_POST['quantity'];
+
+//retrieve user details from form
+$username = $_POST['username'];
+$contact_number = $_POST['contact_number'];
+$address = $_POST['address'];
+$recipient_name = $_POST['recipient_name'];
+
+//check if user already exists
+$query = "SELECT * FROM users WHERE username='$username'";
+$result = mysqli_query($db, $query);
+if (mysqli_num_rows($result) == 0) {
+    //insert new user if not yet existing
+    $query = "INSERT INTO users (username, contact_number, address) VALUES ('$username', '$contact_number', '$address')";
+    mysqli_query($db, $query);
+}
+
+//retrieve user ID
+$query = "SELECT * FROM users WHERE username='$username'";
+$result = mysqli_query($db, $query);
+$row = mysqli_fetch_array($result);
+$user_id = $row['id'];
+
+//insert new order
+$query = "INSERT INTO orders (item_id, user_id, item_qty) VALUES ('$item_id', '$user_id', '$item_qty')";
+mysqli_query($db, $query);
+
+//close database connection
+mysqli_close($db);
+?>
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Checkout</title>
+</head>
+<body>
+    <h1>Order Details:</h1>
+    <p>Item: <?php echo $item_name; ?></p>
+    <p>Price: <?php echo $item_price; ?></p>
+    <p>Quantity: <?php echo $item_qty; ?></p>
+    <p>Total Price: <?php echo $item_price*$item_qty; ?></p>
+    <h2>User Information:</h2>
+    <form action="order_list.php" method="post">
+        <label>Username:</label>
+<input type="text" name="username" required><br>
+<label>Contact Number:</label>
+<input type="text" name="contact_number" required><br>
+<label>Address:</label>
+<input type="text" name="address" required><br>
+<label>Recipient Name:</label>
+<input type="text" name="recipient_name" required><br>
+<input type="submit" value="Confirm Order">
+</form>
+
+</body>
+</html>
